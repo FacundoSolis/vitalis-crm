@@ -1,0 +1,153 @@
+'use server'
+
+import Anthropic from '@anthropic-ai/sdk'
+import { revalidatePath } from 'next/cache'
+import { clienteServidor, perfilActual } from '@/lib/supabase/servidor'
+import {
+  ETIQUETA_ESTADO, ETIQUETA_FUENTE, ETIQUETA_TRATAMIENTO,
+  haceCuanto, type Lead, type Nota,
+} from '@/lib/dominio'
+
+export type ResultadoIA =
+  | { ok: true; mensaje: string }
+  | { ok: false; error: string }
+
+/**
+ * Tono elegido para Vitalis (decisión de producto, ver README):
+ * cercano pero profesional, de tú, español de España. Sin diagnósticos,
+ * sin precios y sin promesas clínicas — eso lo dice el dentista, no un CRM.
+ */
+const INSTRUCCIONES = `Eres la recepcionista de Clínica Dental Vitalis, una clínica con sedes en Madrid, Valencia y Sevilla.
+
+Escribes el borrador de un mensaje de WhatsApp de seguimiento para un paciente potencial. Una persona del equipo lo revisará antes de enviarlo.
+
+Cómo escribes:
+- En español de España, tuteando, cercano pero profesional. Nada de márketing agresivo ni exceso de emojis (como mucho uno, y solo si encaja).
+- Entre 30 y 60 palabras. Es un WhatsApp, no un email.
+- Empiezas saludando por el nombre de pila y te presentas como el equipo de Vitalis mencionando su sede.
+- Haces referencia concreta al tratamiento que le interesa y a lo último que sabemos de él (mira las notas del historial).
+- Terminas con UNA llamada a la acción clara y fácil de responder.
+
+Límites que no cruzas nunca:
+- No das precios, ni presupuestos, ni rangos de precio.
+- No haces diagnósticos ni prometes resultados clínicos.
+- No te inventas citas, fechas, promociones ni datos que no aparezcan en la ficha.
+- No usas asteriscos, markdown ni encabezados. Es texto plano de WhatsApp.
+
+Cómo adaptas el mensaje al estado del lead:
+- nuevo: primer contacto. Agradeces su interés y ofreces resolver dudas o agendar una primera visita.
+- contactado: ya hablamos con él y no ha respondido. Retomas con naturalidad, sin reprochar el silencio.
+- cita_agendada: recuerdas la cita, confirmas asistencia y ofreces cambiarla si le viene mal.
+- no_interesado: mensaje breve, sin presión, dejando la puerta abierta para el futuro.
+- cliente: seguimiento post-tratamiento. Interesarte por cómo va y recordar la revisión.
+
+Respondes ÚNICAMENTE con el texto del mensaje. Sin comillas, sin preámbulos, sin explicaciones.`
+
+function fichaDelLead(lead: Lead, notas: Nota[]) {
+  const historial = notas.length
+    ? notas
+        .slice(0, 5)
+        .map((n) => `- (${haceCuanto(n.fecha)}) ${n.texto}`)
+        .join('\n')
+    : '- Todavía no hay ningún contacto registrado.'
+
+  return `Nombre: ${lead.nombre}
+Sede de interés: ${lead.clinica}
+Tratamiento: ${ETIQUETA_TRATAMIENTO[lead.tratamiento]}
+Estado actual: ${lead.estado} (${ETIQUETA_ESTADO[lead.estado]})
+Cómo nos llegó: ${ETIQUETA_FUENTE[lead.fuente]}
+Entró en la base de datos: ${haceCuanto(lead.creado_en)}
+
+Historial de contactos (de más reciente a más antiguo):
+${historial}`
+}
+
+/**
+ * Genera el borrador de WhatsApp con Claude y lo guarda como nota del lead,
+ * marcada como `mensaje_ia` para que el equipo sepa que hay que revisarla.
+ */
+export async function generarMensajeSeguimiento(leadId: string): Promise<ResultadoIA> {
+  const perfil = await perfilActual()
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { ok: false, error: 'Falta configurar ANTHROPIC_API_KEY en el entorno.' }
+  }
+
+  const supabase = await clienteServidor()
+
+  // RLS se encarga de que solo se pueda leer un lead de tu clínica.
+  const { data: lead, error: errorLead } = await supabase
+    .from('leads')
+    .select('*')
+    .eq('id', leadId)
+    .single<Lead>()
+
+  if (errorLead || !lead) {
+    return { ok: false, error: 'No se ha encontrado el lead.' }
+  }
+
+  const { data: notas } = await supabase
+    .from('notas')
+    .select('*')
+    .eq('lead_id', leadId)
+    .neq('tipo', 'sistema')
+    .order('fecha', { ascending: false })
+    .limit(5)
+    .returns<Nota[]>()
+
+  let mensaje: string
+  try {
+    const claude = new Anthropic()
+    const respuesta = await claude.messages.create({
+      model: 'claude-opus-5',
+      max_tokens: 2000,
+      // Un WhatsApp de 50 palabras no necesita razonamiento profundo, y el
+      // esfuerzo bajo mantiene la respuesta por debajo del par de segundos.
+      output_config: { effort: 'low' },
+      system: INSTRUCCIONES,
+      messages: [
+        {
+          role: 'user',
+          content: `Redacta el mensaje de seguimiento para este paciente potencial:\n\n${fichaDelLead(lead, notas ?? [])}`,
+        },
+      ],
+    })
+
+    if (respuesta.stop_reason === 'refusal') {
+      return { ok: false, error: 'El modelo ha declinado generar este mensaje.' }
+    }
+
+    mensaje = respuesta.content
+      .filter((bloque) => bloque.type === 'text')
+      .map((bloque) => bloque.text)
+      .join('')
+      .trim()
+
+    if (!mensaje) return { ok: false, error: 'El modelo ha devuelto una respuesta vacía.' }
+  } catch (e) {
+    if (e instanceof Anthropic.AuthenticationError) {
+      return { ok: false, error: 'La clave de la API de Anthropic no es válida.' }
+    }
+    if (e instanceof Anthropic.RateLimitError) {
+      return { ok: false, error: 'Límite de peticiones alcanzado. Inténtalo en unos segundos.' }
+    }
+    if (e instanceof Anthropic.APIError) {
+      return { ok: false, error: `Error de la API (${e.status}): ${e.message}` }
+    }
+    return { ok: false, error: 'No se ha podido contactar con el servicio de IA.' }
+  }
+
+  const { error: errorNota } = await supabase.from('notas').insert({
+    lead_id: leadId,
+    texto: mensaje,
+    tipo: 'mensaje_ia',
+    autor_id: perfil.id,
+  })
+
+  if (errorNota) {
+    return { ok: false, error: 'El mensaje se generó pero no se pudo guardar como nota.' }
+  }
+
+  revalidatePath(`/leads/${leadId}`)
+  return { ok: true, mensaje }
+}
