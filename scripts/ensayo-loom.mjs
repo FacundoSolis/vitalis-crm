@@ -86,7 +86,7 @@ await paso('el botón de copiar el mensaje funciona', async () => {
     .getByRole('button', { name: /Copiar/ })
     .first()
     .click()
-  await pag.getByText('Copiado').waitFor({ timeout: 10000 })
+  await pag.getByRole('button', { name: 'Copiado' }).waitFor({ timeout: 10000 })
 })
 
 await paso('edita el lead y el cambio queda en el historial', async () => {

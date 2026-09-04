@@ -10,7 +10,8 @@
     "seed": "node --env-file=.env.local scripts/seed.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"scripts/*.mjs\"",
     "capturas": "node --env-file=.env.local scripts/capturas.mjs",
-    "verificar": "node --env-file=.env.local scripts/verificar.mjs"
+    "verificar": "node --env-file=.env.local scripts/verificar.mjs",
+    "ensayo": "node scripts/ensayo-loom.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.6",
