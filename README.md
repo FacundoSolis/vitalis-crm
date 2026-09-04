@@ -3,7 +3,7 @@
 Panel interno de captación de pacientes para Clínica Dental Vitalis (Madrid, Valencia y Sevilla).
 Sustituye el Excel que hoy se pasan por email entre las tres clínicas.
 
-**Stack:** Next.js 16 (App Router, Server Actions) · Supabase (Postgres + Auth + RLS) · Vercel · Claude Opus 5 · shadcn/ui
+**Stack:** Next.js 16 (App Router, Server Actions) · Supabase (Postgres + Auth + RLS) · Vercel · OpenAI · shadcn/ui
 
 ---
 
@@ -12,7 +12,7 @@ Sustituye el Excel que hoy se pasan por email entre las tres clínicas.
 - **Todos los leads en un sitio**, vengan de Instagram, del formulario web o de una llamada.
 - **Filtros** por clínica, por estado y búsqueda por nombre o teléfono.
 - **Ficha de lead** con historial completo: cada llamada y cada mensaje quedan apuntados.
-- **Generador de mensajes de seguimiento**: un botón redacta el WhatsApp con Claude a partir del
+- **Generador de mensajes de seguimiento**: un botón redacta el WhatsApp con la API de OpenAI a partir del
   tratamiento, el estado y lo último que se habló. Se guarda como nota para que el equipo lo revise
   antes de enviarlo — nunca se envía solo.
 - **Login por usuario**, con permisos distintos para gerencia y para recepción.
@@ -93,7 +93,7 @@ WhatsApps a pacientes sin supervisión es un problema, no una función.
 
 ```bash
 pnpm install
-cp .env.example .env.local     # y rellena las cuatro variables
+cp .env.example .env.local     # y rellena las variables
 pnpm seed                      # crea los usuarios de prueba y datos de ejemplo
 pnpm dev
 ```
@@ -105,7 +105,8 @@ Variables de entorno:
 | `NEXT_PUBLIC_SUPABASE_URL` | Proyecto de Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Cliente de navegador (limitado por RLS) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Solo para el script de seed, nunca en el navegador |
-| `ANTHROPIC_API_KEY` | Generación de mensajes de seguimiento |
+| `OPENAI_API_KEY` | Generación de mensajes de seguimiento |
+| `OPENAI_MODEL` | Modelo a usar (por defecto `gpt-4o-mini`) |
 
 ### Usuarios de prueba
 
@@ -135,7 +136,7 @@ nada.
 src/
 ├── app/
 │   ├── acciones/leads.ts     Server Actions del CRUD (validadas con zod)
-│   ├── acciones/ia.ts        Generación del mensaje con Claude
+│   ├── acciones/ia.ts        Generación del mensaje con OpenAI
 │   ├── leads/[id]/page.tsx   Ficha del lead
 │   ├── login/page.tsx
 │   └── page.tsx              Listado con filtros y métricas

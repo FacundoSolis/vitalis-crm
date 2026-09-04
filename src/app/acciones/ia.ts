@@ -1,12 +1,15 @@
 'use server'
 
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { revalidatePath } from 'next/cache'
 import { clienteServidor, perfilActual } from '@/lib/supabase/servidor'
 import {
   ETIQUETA_ESTADO, ETIQUETA_FUENTE, ETIQUETA_TRATAMIENTO,
   haceCuanto, type Lead, type Nota,
 } from '@/lib/dominio'
+
+/** Configurable por entorno para poder cambiar de modelo sin tocar el código. */
+const MODELO = process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
 
 export type ResultadoIA =
   | { ok: true; mensaje: string }
@@ -69,8 +72,8 @@ ${historial}`
 export async function generarMensajeSeguimiento(leadId: string): Promise<ResultadoIA> {
   const perfil = await perfilActual()
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return { ok: false, error: 'Falta configurar ANTHROPIC_API_KEY en el entorno.' }
+  if (!process.env.OPENAI_API_KEY) {
+    return { ok: false, error: 'Falta configurar OPENAI_API_KEY en el entorno.' }
   }
 
   const supabase = await clienteServidor()
@@ -97,15 +100,14 @@ export async function generarMensajeSeguimiento(leadId: string): Promise<Resulta
 
   let mensaje: string
   try {
-    const claude = new Anthropic()
-    const respuesta = await claude.messages.create({
-      model: 'claude-opus-5',
-      max_tokens: 2000,
-      // Un WhatsApp de 50 palabras no necesita razonamiento profundo, y el
-      // esfuerzo bajo mantiene la respuesta por debajo del par de segundos.
-      output_config: { effort: 'low' },
-      system: INSTRUCCIONES,
+    const openai = new OpenAI()
+    const respuesta = await openai.chat.completions.create({
+      model: MODELO,
+      // Un WhatsApp de 50 palabras no da para más; el límite evita sorpresas
+      // en la factura si el modelo se enrolla.
+      max_completion_tokens: 300,
       messages: [
+        { role: 'system', content: INSTRUCCIONES },
         {
           role: 'user',
           content: `Redacta el mensaje de seguimiento para este paciente potencial:\n\n${fichaDelLead(lead, notas ?? [])}`,
@@ -113,25 +115,22 @@ export async function generarMensajeSeguimiento(leadId: string): Promise<Resulta
       ],
     })
 
-    if (respuesta.stop_reason === 'refusal') {
-      return { ok: false, error: 'El modelo ha declinado generar este mensaje.' }
-    }
-
-    mensaje = respuesta.content
-      .filter((bloque) => bloque.type === 'text')
-      .map((bloque) => bloque.text)
-      .join('')
-      .trim()
-
+    mensaje = respuesta.choices[0]?.message?.content?.trim() ?? ''
     if (!mensaje) return { ok: false, error: 'El modelo ha devuelto una respuesta vacía.' }
   } catch (e) {
-    if (e instanceof Anthropic.AuthenticationError) {
-      return { ok: false, error: 'La clave de la API de Anthropic no es válida.' }
+    if (e instanceof OpenAI.AuthenticationError) {
+      return { ok: false, error: 'La clave de la API de OpenAI no es válida.' }
     }
-    if (e instanceof Anthropic.RateLimitError) {
-      return { ok: false, error: 'Límite de peticiones alcanzado. Inténtalo en unos segundos.' }
+    if (e instanceof OpenAI.RateLimitError) {
+      return {
+        ok: false,
+        error: 'Límite alcanzado o sin saldo en la cuenta de OpenAI. Inténtalo en unos segundos.',
+      }
     }
-    if (e instanceof Anthropic.APIError) {
+    if (e instanceof OpenAI.NotFoundError) {
+      return { ok: false, error: `El modelo "${MODELO}" no está disponible en esta cuenta.` }
+    }
+    if (e instanceof OpenAI.APIError) {
       return { ok: false, error: `Error de la API (${e.status}): ${e.message}` }
     }
     return { ok: false, error: 'No se ha podido contactar con el servicio de IA.' }
