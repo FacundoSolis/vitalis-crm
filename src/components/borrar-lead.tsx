@@ -25,7 +25,7 @@ export function BorrarLead({ id, nombre }: { id: string; nombre: string }) {
         })
       }}
     >
-      <Trash2 /> Eliminar
+      <Trash2 /> Eliminar lead
     </Button>
   )
 }

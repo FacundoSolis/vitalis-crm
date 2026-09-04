@@ -87,10 +87,18 @@ export function HistorialLead({ lead, notas }: { lead: Lead; notas: Nota[] }) {
   }
 
   async function copiar(nota: Nota) {
-    await navigator.clipboard.writeText(nota.texto)
-    setCopiada(nota.id)
-    toast.success('Mensaje copiado. Ya lo puedes pegar en WhatsApp.')
-    setTimeout(() => setCopiada(null), 2000)
+    // El portapapeles falla en contextos no seguros y si el navegador deniega el
+    // permiso. Sin este control el botón no hacía nada y no lo decía.
+    try {
+      await navigator.clipboard.writeText(nota.texto)
+      setCopiada(nota.id)
+      toast.success('Mensaje copiado. Ya lo puedes pegar en WhatsApp.')
+      setTimeout(() => setCopiada(null), 2000)
+    } catch {
+      toast.error('Tu navegador no deja copiar automáticamente.', {
+        description: 'Selecciona el texto del mensaje y cópialo a mano.',
+      })
+    }
   }
 
   return (
