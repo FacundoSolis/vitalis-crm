@@ -3,7 +3,7 @@
 Panel interno de captación de pacientes para Clínica Dental Vitalis (Madrid, Valencia y Sevilla).
 Sustituye el Excel que hoy se pasan por email entre las tres clínicas.
 
-**Stack:** Next.js 16 (App Router, Server Actions) · Supabase (Postgres + Auth + RLS) · Vercel · OpenAI · shadcn/ui
+**Stack:** Next.js 16 (App Router, Server Actions) · Supabase (Postgres + Auth + RLS) · Vercel · OpenAI · shadcn/ui + Tailwind v4
 
 ---
 
@@ -16,6 +16,7 @@ Sustituye el Excel que hoy se pasan por email entre las tres clínicas.
   tratamiento, el estado y lo último que se habló. Se guarda como nota para que el equipo lo revise
   antes de enviarlo — nunca se envía solo.
 - **Login por usuario**, con permisos distintos para gerencia y para recepción.
+- **Modo claro y oscuro**, con selector en la cabecera y respeto por la preferencia del sistema.
 
 ---
 
@@ -77,6 +78,22 @@ a uno *no interesado* se le deja la puerta abierta sin presión.
 visualmente, con un botón de copiar. La persona lo revisa y lo pega en WhatsApp. Un CRM que manda
 WhatsApps a pacientes sin supervisión es un problema, no una función.
 
+### 5. ¿De quién es la marca del panel? → De Vitalis, no de DelegIA
+
+La herramienta es de la clínica, así que la cabecera y el monograma son de Vitalis.
+DelegIA aparece como quien construye el sistema, en el pie del panel de acceso.
+
+Dicho eso, la identidad visual sí sale del logo de DelegIA: el índigo `#6569F7` es el
+color de acción de toda la aplicación, extraído del propio archivo del logo. Como el
+logotipo es blanco sobre transparente, solo funciona sobre fondo oscuro, y de ahí sale
+el panel lateral del login: es la superficie donde la marca puede vivir sin inventarse
+una versión del logo que nadie ha aprobado.
+
+Los estados del embudo usan cuatro tonos bien separados (ámbar, cielo, violeta,
+esmeralda) que no compiten con ese índigo, porque el color de estado es dato y el
+índigo es acción. Y solo se marca en naranja lo accionable de verdad: tratamiento caro
+que todavía nadie ha llamado.
+
 ### Decisiones menores
 
 - **Los implantes y la ortodoncia se marcan como alto valor.** El brief decía que los implantes se
@@ -128,6 +145,9 @@ Se conecta a la base de datos real con cada usuario y comprueba que recepción s
 que no puede crear leads en otra, que el rastro de auditoría se escribe solo y que un anónimo no ve
 nada.
 
+Y `pnpm capturas` abre la aplicación con un navegador real, hace login y guarda las pantallas en
+claro, oscuro y móvil. Sirve para revisar el diseño sin ir a ciegas.
+
 ---
 
 ## Estructura
@@ -135,16 +155,18 @@ nada.
 ```
 src/
 ├── app/
-│   ├── acciones/leads.ts     Server Actions del CRUD (validadas con zod)
-│   ├── acciones/ia.ts        Generación del mensaje con OpenAI
-│   ├── leads/[id]/page.tsx   Ficha del lead
-│   ├── login/page.tsx
-│   └── page.tsx              Listado con filtros y métricas
-├── components/               Interfaz (shadcn/ui en components/ui)
-├── lib/dominio.ts            Vocabulario del CRM: tipos, etiquetas, colores
-├── lib/supabase/             Clientes de navegador y de servidor
-└── proxy.ts                  Refresco de sesión y protección de rutas
-supabase/migrations/          Esquema, triggers y políticas de RLS
+│   ├── acciones/leads.ts      Server Actions del CRUD (validadas con zod)
+│   ├── acciones/ia.ts         Generación del mensaje con OpenAI
+│   ├── (panel)/layout.tsx     Cabecera común, para que no parpadee entre rutas
+│   ├── (panel)/page.tsx       Listado con filtros y métricas
+│   ├── (panel)/leads/[id]/    Ficha del lead
+│   └── login/page.tsx
+├── components/                Interfaz (shadcn/ui personalizado en components/ui)
+├── lib/dominio.ts             Vocabulario del CRM: tipos, etiquetas, colores
+├── lib/supabase/              Clientes de navegador y de servidor
+└── proxy.ts                   Refresco de sesión y protección de rutas
+supabase/migrations/           Esquema, triggers y políticas de RLS
+scripts/                       Seed, verificación de permisos y capturas
 ```
 
 ---
