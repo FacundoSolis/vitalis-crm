@@ -25,7 +25,9 @@ export async function proxy(peticion: NextRequest) {
     },
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   const esLogin = peticion.nextUrl.pathname.startsWith('/login')
 
   if (!user && !esLogin) {
@@ -44,5 +46,7 @@ export async function proxy(peticion: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }

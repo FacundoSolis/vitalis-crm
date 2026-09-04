@@ -41,7 +41,9 @@ export type Perfil = {
  */
 export async function perfilActual(): Promise<Perfil> {
   const supabase = await clienteServidor()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const { data: perfil } = await supabase

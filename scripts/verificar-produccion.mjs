@@ -8,7 +8,10 @@ const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const ref = new URL(url).hostname.split('.')[0]
 
 let fallos = 0
-const exigir = (ok, texto) => { console.log(`  ${ok ? '✓' : '✗'} ${texto}`); if (!ok) fallos++ }
+const exigir = (ok, texto) => {
+  console.log(`  ${ok ? '✓' : '✗'} ${texto}`)
+  if (!ok) fallos++
+}
 
 /** Reproduce el formato de cookie de @supabase/ssr, troceada si hace falta. */
 function cookieDeSesion(sesion) {
@@ -21,7 +24,10 @@ function cookieDeSesion(sesion) {
 
 async function panelComo(email) {
   const c = createClient(url, anon, { auth: { persistSession: false } })
-  const { data, error } = await c.auth.signInWithPassword({ email, password: 'Vitalis2026!' })
+  const { data, error } = await c.auth.signInWithPassword({
+    email,
+    password: 'Vitalis2026!',
+  })
   if (error) throw new Error(`${email}: ${error.message}`)
 
   const r = await fetch(`${BASE}/`, {

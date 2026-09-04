@@ -11,11 +11,14 @@ export function BorrarLead({ id, nombre }: { id: string; nombre: string }) {
 
   return (
     <Button
-      variant="outline"
-      className="text-destructive hover:text-destructive"
+      variant="ghost"
+      className="text-muted-foreground hover:text-destructive hover:bg-destructive/8"
       disabled={borrando}
       onClick={() => {
-        if (!confirm(`¿Eliminar el lead de ${nombre}? Se borrarán también todas sus notas.`)) return
+        if (
+          !confirm(`¿Eliminar el lead de ${nombre}? Se borrarán también todas sus notas.`)
+        )
+          return
         empezar(async () => {
           const r = await eliminarLeadYVolver(id)
           if (r && !r.ok) toast.error(r.error)

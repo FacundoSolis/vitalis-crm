@@ -3,40 +3,59 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
-import { Copy, Camera, MoreHorizontal, Phone, Globe, Trash2, Pencil } from 'lucide-react'
+import {
+  Camera,
+  ChevronRight,
+  Copy,
+  Globe,
+  MoreHorizontal,
+  Pencil,
+  Phone,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import type { Perfil } from '@/lib/supabase/servidor'
 import { cambiarEstado, eliminarLead } from '@/app/acciones/leads'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
-import {
-  COLOR_ESTADO, ES_ALTO_VALOR, ESTADOS, ETIQUETA_ESTADO,
-  ETIQUETA_TRATAMIENTO, haceCuanto, type Estado, type Lead,
+  COLOR_ESTADO,
+  ES_ALTO_VALOR,
+  ESTADOS,
+  ETIQUETA_ESTADO,
+  ETIQUETA_FUENTE,
+  ETIQUETA_TRATAMIENTO,
+  PUNTO_ESTADO,
+  haceCuanto,
+  type Estado,
+  type Lead,
 } from '@/lib/dominio'
 
 const ICONO_FUENTE = { instagram: Camera, web: Globe, llamada: Phone }
 
 export function TablaLeads({
-  leads, duplicados, perfil,
+  leads,
+  duplicados,
+  perfil,
 }: {
   leads: Lead[]
   duplicados: string[]
   perfil: Perfil
 }) {
   const router = useRouter()
-  const [, empezar] = useTransition()
+  const [pendiente, empezar] = useTransition()
   const repetidos = new Set(duplicados)
 
   function borrar(lead: Lead) {
-    if (!confirm(`¿Eliminar el lead de ${lead.nombre}? Se borrarán también sus notas.`)) return
+    if (!confirm(`¿Eliminar el lead de ${lead.nombre}? Se borrarán también sus notas.`))
+      return
     empezar(async () => {
       const r = await eliminarLead(lead.id)
       if (r.ok) {
@@ -50,7 +69,9 @@ export function TablaLeads({
     empezar(async () => {
       const r = await cambiarEstado(lead.id, estado)
       if (r.ok) {
-        toast.success(`${lead.nombre} → ${ETIQUETA_ESTADO[estado]}`)
+        toast.success(
+          `${lead.nombre.split(' ')[0]} pasa a ${ETIQUETA_ESTADO[estado].toLowerCase()}`,
+        )
         router.refresh()
       } else toast.error(r.error)
     })
@@ -58,114 +79,127 @@ export function TablaLeads({
 
   if (leads.length === 0) {
     return (
-      <Card className="p-12 text-center">
-        <p className="font-medium">No hay leads que coincidan.</p>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Prueba a quitar algún filtro, o da de alta un lead nuevo.
+      <div className="border-border bg-card rounded-xl border px-6 py-16 text-center">
+        <p className="font-medium">No hay leads que coincidan</p>
+        <p className="text-muted-foreground mx-auto mt-1.5 max-w-sm text-sm leading-relaxed">
+          Prueba a quitar algún filtro, o da de alta el paciente que acaba de llamar.
         </p>
-      </Card>
+      </div>
     )
   }
 
   return (
-    <Card className="overflow-hidden py-0">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead>Paciente</TableHead>
-              <TableHead>Tratamiento</TableHead>
-              <TableHead className="hidden md:table-cell">Clínica</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="hidden lg:table-cell">Entró</TableHead>
-              <TableHead className="w-10" />
-            </TableRow>
-          </TableHeader>
+    <div
+      className={`border-border bg-card divide-border divide-y overflow-hidden rounded-xl border transition-opacity ${
+        pendiente ? 'opacity-60' : ''
+      }`}
+    >
+      {leads.map((lead) => {
+        const IconoFuente = ICONO_FUENTE[lead.fuente]
+        const esRepetido = repetidos.has(lead.telefono_normalizado)
+        // Solo se marca lo accionable: tratamiento caro que nadie ha llamado aún.
+        // Marcar todos los "alto valor" llenaba la tabla de naranja y no decía nada.
+        const enFrio = ES_ALTO_VALOR[lead.tratamiento] && lead.estado === 'nuevo'
 
-          <TableBody>
-            {leads.map((lead) => {
-              const IconoFuente = ICONO_FUENTE[lead.fuente]
-              const esRepetido = repetidos.has(lead.telefono_normalizado)
+        return (
+          <div
+            key={lead.id}
+            className="hover:bg-accent/40 group relative grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-4 py-3.5 transition-colors sm:px-5 md:grid-cols-[minmax(0,1fr)_170px_128px_84px_auto]"
+          >
+            {enFrio && (
+              <span
+                aria-hidden
+                className="absolute inset-y-0 left-0 w-[3px] bg-amber-500"
+                title="Alto valor sin contactar"
+              />
+            )}
 
-              return (
-                <TableRow key={lead.id} className="group">
-                  <TableCell>
-                    <Link href={`/leads/${lead.id}`} className="block">
-                      <span className="font-medium group-hover:underline">{lead.nombre}</span>
-                      <span className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
-                        <IconoFuente className="size-3" />
-                        {lead.telefono}
-                        {esRepetido && (
-                          <span
-                            className="inline-flex items-center gap-0.5 text-amber-600 dark:text-amber-400"
-                            title="Otro lead tiene este mismo teléfono"
-                          >
-                            <Copy className="size-3" /> repetido
-                          </span>
-                        )}
-                      </span>
-                    </Link>
-                  </TableCell>
+            <div className="min-w-0">
+              <Link
+                href={`/leads/${lead.id}`}
+                className="block focus-visible:outline-none"
+              >
+                <span className="absolute inset-0" aria-hidden />
+                <span className="block truncate text-[15px] font-medium group-hover:underline">
+                  {lead.nombre}
+                </span>
+                <span className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <IconoFuente className="size-3 shrink-0" />
+                    <span className="font-mono">{lead.telefono}</span>
+                  </span>
+                  <span className="hidden sm:inline">{ETIQUETA_FUENTE[lead.fuente]}</span>
+                  <span className="md:hidden">
+                    {ETIQUETA_TRATAMIENTO[lead.tratamiento]} · {lead.clinica}
+                  </span>
+                  {esRepetido && (
+                    <span
+                      className="flex items-center gap-1 text-amber-600 dark:text-amber-400"
+                      title="Otro lead tiene este mismo teléfono"
+                    >
+                      <Copy className="size-3" /> repetido
+                    </span>
+                  )}
+                </span>
+              </Link>
+            </div>
 
-                  <TableCell>
-                    <span className="text-sm">{ETIQUETA_TRATAMIENTO[lead.tratamiento]}</span>
-                    {ES_ALTO_VALOR[lead.tratamiento] && (
-                      <span
-                        className="ml-1.5 text-orange-500"
-                        title="Tratamiento de alto valor: prioriza el contacto"
-                      >
-                        ●
-                      </span>
-                    )}
-                  </TableCell>
+            <div className="hidden min-w-0 md:block">
+              <p className="truncate text-sm">{ETIQUETA_TRATAMIENTO[lead.tratamiento]}</p>
+              <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                {lead.clinica}
+              </p>
+            </div>
 
-                  <TableCell className="text-muted-foreground hidden text-sm md:table-cell">
-                    {lead.clinica}
-                  </TableCell>
+            <span
+              className={`col-start-1 row-start-2 justify-self-start rounded-md border px-2 py-1 text-xs font-medium whitespace-nowrap md:col-start-auto md:row-start-auto ${COLOR_ESTADO[lead.estado]}`}
+            >
+              {ETIQUETA_ESTADO[lead.estado]}
+            </span>
 
-                  <TableCell>
-                    <Badge variant="outline" className={COLOR_ESTADO[lead.estado]}>
-                      {ETIQUETA_ESTADO[lead.estado]}
-                    </Badge>
-                  </TableCell>
+            <span className="text-muted-foreground hidden text-xs whitespace-nowrap lg:block">
+              {haceCuanto(lead.creado_en)}
+            </span>
 
-                  <TableCell className="text-muted-foreground hidden text-sm whitespace-nowrap lg:table-cell">
-                    {haceCuanto(lead.creado_en)}
-                  </TableCell>
-
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label={`Acciones de ${lead.nombre}`}>
-                          <MoreHorizontal />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-52">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/leads/${lead.id}`}>
-                            <Pencil /> Abrir ficha
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuLabel className="text-xs">Mover a</DropdownMenuLabel>
-                        {ESTADOS.filter((e) => e !== lead.estado).map((e) => (
-                          <DropdownMenuItem key={e} onSelect={() => moverA(lead, e)}>
-                            {ETIQUETA_ESTADO[e]}
-                          </DropdownMenuItem>
-                        ))}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive" onSelect={() => borrar(lead)}>
-                          <Trash2 /> Eliminar lead
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </div>
-    </Card>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-foreground relative z-10 shrink-0 justify-self-end"
+                  aria-label={`Acciones de ${lead.nombre}`}
+                >
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href={`/leads/${lead.id}`}>
+                    <Pencil /> Abrir ficha
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-muted-foreground text-[11px] font-normal">
+                  Mover a
+                </DropdownMenuLabel>
+                {ESTADOS.filter((e) => e !== lead.estado).map((e) => (
+                  <DropdownMenuItem key={e} onSelect={() => moverA(lead, e)}>
+                    <span
+                      className={`size-2 rounded-full ${PUNTO_ESTADO[e]}`}
+                      aria-hidden
+                    />
+                    {ETIQUETA_ESTADO[e]}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onSelect={() => borrar(lead)}>
+                  <Trash2 /> Eliminar lead
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )
+      })}
+    </div>
   )
 }

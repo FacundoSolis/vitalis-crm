@@ -7,7 +7,11 @@ import type { Perfil } from '@/lib/supabase/servidor'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { CLINICAS, ESTADOS, ETIQUETA_ESTADO } from '@/lib/dominio'
 
@@ -56,13 +60,15 @@ export function FiltrosLeads({ perfil }: { perfil: Perfil }) {
       {/* Recepción solo trabaja con su clínica, así que el filtro no aporta nada. */}
       {perfil.rol === 'admin' && (
         <Select value={clinica} onValueChange={(v) => aplicar('clinica', v)}>
-          <SelectTrigger className="w-[150px]" aria-label="Filtrar por clínica">
+          <SelectTrigger className="w-[168px]" aria-label="Filtrar por clínica">
             <SelectValue placeholder="Clínica" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={TODOS}>Todas las clínicas</SelectItem>
             {CLINICAS.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -75,7 +81,9 @@ export function FiltrosLeads({ perfil }: { perfil: Perfil }) {
         <SelectContent>
           <SelectItem value={TODOS}>Todos los estados</SelectItem>
           {ESTADOS.map((e) => (
-            <SelectItem key={e} value={e}>{ETIQUETA_ESTADO[e]}</SelectItem>
+            <SelectItem key={e} value={e}>
+              {ETIQUETA_ESTADO[e]}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

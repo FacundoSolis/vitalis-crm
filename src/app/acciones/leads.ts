@@ -4,7 +4,14 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { clienteServidor, perfilActual } from '@/lib/supabase/servidor'
-import { CLINICAS, ESTADOS, FUENTES, TRATAMIENTOS, TIPOS_NOTA, normalizarTelefono } from '@/lib/dominio'
+import {
+  CLINICAS,
+  ESTADOS,
+  FUENTES,
+  TRATAMIENTOS,
+  TIPOS_NOTA,
+  normalizarTelefono,
+} from '@/lib/dominio'
 
 export type Resultado = { ok: true } | { ok: false; error: string }
 
@@ -13,7 +20,10 @@ const esquemaLead = z.object({
   telefono: z
     .string()
     .trim()
-    .refine((t) => normalizarTelefono(t).length >= 9, 'El teléfono debe tener al menos 9 dígitos.'),
+    .refine(
+      (t) => normalizarTelefono(t).length >= 9,
+      'El teléfono debe tener al menos 9 dígitos.',
+    ),
   email: z.string().trim().email('El email no es válido.').or(z.literal('')).nullable(),
   clinica: z.enum(CLINICAS),
   tratamiento: z.enum(TRATAMIENTOS),
@@ -74,7 +84,10 @@ export async function cambiarEstado(id: string, estado: string): Promise<Resulta
   if (!validado.success) return { ok: false, error: 'Estado no válido.' }
 
   const supabase = await clienteServidor()
-  const { error } = await supabase.from('leads').update({ estado: validado.data }).eq('id', id)
+  const { error } = await supabase
+    .from('leads')
+    .update({ estado: validado.data })
+    .eq('id', id)
 
   if (error) return { ok: false, error: traducirError(error.message) }
   revalidatePath('/')

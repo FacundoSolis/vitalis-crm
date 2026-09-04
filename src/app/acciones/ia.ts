@@ -4,16 +4,18 @@ import OpenAI from 'openai'
 import { revalidatePath } from 'next/cache'
 import { clienteServidor, perfilActual } from '@/lib/supabase/servidor'
 import {
-  ETIQUETA_ESTADO, ETIQUETA_FUENTE, ETIQUETA_TRATAMIENTO,
-  haceCuanto, type Lead, type Nota,
+  ETIQUETA_ESTADO,
+  ETIQUETA_FUENTE,
+  ETIQUETA_TRATAMIENTO,
+  haceCuanto,
+  type Lead,
+  type Nota,
 } from '@/lib/dominio'
 
 /** Configurable por entorno para poder cambiar de modelo sin tocar el código. */
 const MODELO = process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
 
-export type ResultadoIA =
-  | { ok: true; mensaje: string }
-  | { ok: false; error: string }
+export type ResultadoIA = { ok: true; mensaje: string } | { ok: false; error: string }
 
 /**
  * Tono elegido para Vitalis (decisión de producto, ver README):
@@ -116,7 +118,8 @@ export async function generarMensajeSeguimiento(leadId: string): Promise<Resulta
     })
 
     mensaje = respuesta.choices[0]?.message?.content?.trim() ?? ''
-    if (!mensaje) return { ok: false, error: 'El modelo ha devuelto una respuesta vacía.' }
+    if (!mensaje)
+      return { ok: false, error: 'El modelo ha devuelto una respuesta vacía.' }
   } catch (e) {
     if (e instanceof OpenAI.AuthenticationError) {
       return { ok: false, error: 'La clave de la API de OpenAI no es válida.' }
@@ -124,11 +127,15 @@ export async function generarMensajeSeguimiento(leadId: string): Promise<Resulta
     if (e instanceof OpenAI.RateLimitError) {
       return {
         ok: false,
-        error: 'Límite alcanzado o sin saldo en la cuenta de OpenAI. Inténtalo en unos segundos.',
+        error:
+          'Límite alcanzado o sin saldo en la cuenta de OpenAI. Inténtalo en unos segundos.',
       }
     }
     if (e instanceof OpenAI.NotFoundError) {
-      return { ok: false, error: `El modelo "${MODELO}" no está disponible en esta cuenta.` }
+      return {
+        ok: false,
+        error: `El modelo "${MODELO}" no está disponible en esta cuenta.`,
+      }
     }
     if (e instanceof OpenAI.APIError) {
       return { ok: false, error: `Error de la API (${e.status}): ${e.message}` }

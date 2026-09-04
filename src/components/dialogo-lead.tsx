@@ -8,21 +8,38 @@ import type { Perfil } from '@/lib/supabase/servidor'
 import { actualizarLead, crearLead } from '@/app/acciones/leads'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter,
-  DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import {
-  CLINICAS, ESTADOS, ETIQUETA_ESTADO, ETIQUETA_FUENTE,
-  ETIQUETA_TRATAMIENTO, FUENTES, TRATAMIENTOS, type Lead,
+  CLINICAS,
+  ESTADOS,
+  ETIQUETA_ESTADO,
+  ETIQUETA_FUENTE,
+  ETIQUETA_TRATAMIENTO,
+  FUENTES,
+  TRATAMIENTOS,
+  type Lead,
 } from '@/lib/dominio'
 
 export function DialogoLead({
-  perfil, lead, disparador,
+  perfil,
+  lead,
+  disparador,
 }: {
   perfil: Perfil
   lead?: Lead
@@ -73,23 +90,38 @@ export function DialogoLead({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="nombre">Nombre y apellidos</Label>
-              <Input id="nombre" name="nombre" defaultValue={lead?.nombre} required autoFocus />
+              <Input
+                id="nombre"
+                name="nombre"
+                defaultValue={lead?.nombre}
+                required
+                autoFocus
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="telefono">Teléfono</Label>
               <Input
-                id="telefono" name="telefono" type="tel"
+                id="telefono"
+                name="telefono"
+                type="tel"
                 placeholder="+34 600 000 000"
-                defaultValue={lead?.telefono} required
+                defaultValue={lead?.telefono}
+                required
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">
-                Email <span className="text-muted-foreground font-normal">(opcional)</span>
+                Email{' '}
+                <span className="text-muted-foreground font-normal">(opcional)</span>
               </Label>
-              <Input id="email" name="email" type="email" defaultValue={lead?.email ?? ''} />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                defaultValue={lead?.email ?? ''}
+              />
             </div>
 
             <div className="space-y-2">
@@ -104,7 +136,9 @@ export function DialogoLead({
                 </SelectTrigger>
                 <SelectContent>
                   {clinicasDisponibles.map((c) => (
-                    <SelectItem key={c} value={c!}>{c}</SelectItem>
+                    <SelectItem key={c} value={c!}>
+                      {c}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -121,7 +155,9 @@ export function DialogoLead({
                 </SelectTrigger>
                 <SelectContent>
                   {TRATAMIENTOS.map((t) => (
-                    <SelectItem key={t} value={t}>{ETIQUETA_TRATAMIENTO[t]}</SelectItem>
+                    <SelectItem key={t} value={t}>
+                      {ETIQUETA_TRATAMIENTO[t]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -135,7 +171,9 @@ export function DialogoLead({
                 </SelectTrigger>
                 <SelectContent>
                   {FUENTES.map((f) => (
-                    <SelectItem key={f} value={f}>{ETIQUETA_FUENTE[f]}</SelectItem>
+                    <SelectItem key={f} value={f}>
+                      {ETIQUETA_FUENTE[f]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -149,7 +187,9 @@ export function DialogoLead({
                 </SelectTrigger>
                 <SelectContent>
                   {ESTADOS.map((e) => (
-                    <SelectItem key={e} value={e}>{ETIQUETA_ESTADO[e]}</SelectItem>
+                    <SelectItem key={e} value={e}>
+                      {ETIQUETA_ESTADO[e]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { ProveedorTema } from '@/components/tema'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
@@ -16,11 +17,14 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html
       lang="es"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="bg-muted/30 flex min-h-full flex-col">
-        {children}
-        <Toaster position="top-center" richColors />
+      <body className="bg-background flex min-h-full flex-col">
+        <ProveedorTema>
+          {children}
+          <Toaster position="top-center" richColors />
+        </ProveedorTema>
       </body>
     </html>
   )
