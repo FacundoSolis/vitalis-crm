@@ -62,7 +62,7 @@ Contraseña de los tres: `Vitalis2026!`
 
 `pnpm verificar` comprueba contra la base de datos real que recepción solo ve su clínica y
 que un anónimo no ve nada. `pnpm ensayo` recorre en producción el flujo completo con un
-navegador real: crear, duplicado, nota, IA, editar y borrar.
+navegador real: crear, duplicado, nota, IA, editar y borrar con confirmación.
 
 ---
 
@@ -76,5 +76,5 @@ navegador real: crear, duplicado, nota, IA, editar y borrar.
 3. **Avisos de leads que se enfrían.** La métrica está, pero hay que acordarse de mirarla.
 4. **Tests de verdad.** Lo que hay son scripts, no una suite en CI.
 
-Y de lo ya construido revisaría tres cosas: el borrado es real y debería ser lógico, el
-listado no pagina, y las confirmaciones usan el `confirm()` del navegador.
+Y de lo ya construido revisaría dos cosas: el borrado es real y debería ser lógico (una
+papelera de 30 días evitaría el susto), y el listado no pagina.
