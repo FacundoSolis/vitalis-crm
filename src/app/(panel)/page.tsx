@@ -133,7 +133,7 @@ export default async function PaginaLeads({ searchParams }: PageProps<'/'>) {
             <p className="text-muted-foreground mt-1.5 text-sm">{error.message}</p>
           </div>
         ) : (
-          <TablaLeads leads={leads} duplicados={[...duplicados]} perfil={perfil} />
+          <TablaLeads leads={leads} duplicados={[...duplicados]} />
         )}
       </div>
     </main>

@@ -1,5 +1,5 @@
 // Ensaya en producción, con un navegador real, exactamente el guion del vídeo:
-// crear → duplicado → generar con IA → editar → borrar. Si esto pasa, la
+// crear → duplicado → generar con IA → editar → confirmar borrado. Si esto pasa, la
 // demo en directo no se cae.
 import { chromium } from 'playwright'
 
@@ -97,9 +97,25 @@ await paso('edita el lead y el cambio queda en el historial', async () => {
   await pag.getByText(/nuevo → contactado/).waitFor({ timeout: 25000 })
 })
 
-await paso('borra el lead y vuelve al listado', async () => {
-  pag.once('dialog', (d) => d.accept())
+await paso('borrar un apunte pide confirmación y se puede cancelar', async () => {
+  const apunte = pag
+    .locator('li')
+    .filter({ hasText: /Pide presupuesto por WhatsApp/ })
+    .first()
+  await apunte.getByRole('button', { name: 'Eliminar nota' }).click()
+  const dialogo = pag.getByRole('alertdialog')
+  await dialogo.getByText('¿Eliminar este apunte?').waitFor({ timeout: 10000 })
+  await dialogo.getByRole('button', { name: 'Cancelar' }).click()
+  await pag.waitForTimeout(400)
+  // Cancelar no borra: el apunte sigue en el historial.
+  await pag.getByText(/Pide presupuesto por WhatsApp/).waitFor({ timeout: 10000 })
+})
+
+await paso('borra el lead confirmando en el diálogo y vuelve al listado', async () => {
   await pag.getByRole('button', { name: 'Eliminar lead', exact: true }).click()
+  const dialogo = pag.getByRole('alertdialog')
+  await dialogo.getByText(/Se borrarán también todas sus notas/).waitFor({ timeout: 10000 })
+  await dialogo.getByRole('button', { name: 'Eliminar lead', exact: true }).click()
   await pag.waitForURL(`${BASE}/`, { timeout: 25000 })
   await pag.getByRole('heading', { name: 'Leads', level: 1 }).waitFor({ timeout: 25000 })
 })

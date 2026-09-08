@@ -17,6 +17,7 @@ import { toast } from 'sonner'
 import { crearNota, eliminarNota } from '@/app/acciones/leads'
 import { generarMensajeSeguimiento } from '@/app/acciones/ia'
 import { Button } from '@/components/ui/button'
+import { ConfirmarBorrado } from '@/components/confirmar-borrado'
 
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -232,16 +233,22 @@ export function HistorialLead({ lead, notas }: { lead: Lead; notas: Nota[] }) {
                           </Button>
                         )}
                         {!esSistema && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-muted-foreground hover:text-destructive size-7"
-                            disabled={borrando}
-                            onClick={() => borrar(nota.id)}
-                            aria-label="Eliminar nota"
+                          <ConfirmarBorrado
+                            titulo="¿Eliminar este apunte?"
+                            descripcion="Desaparece del historial del lead para todo el equipo. No se puede deshacer."
+                            accion="Eliminar apunte"
+                            onConfirmar={() => borrar(nota.id)}
                           >
-                            <Trash2 className="size-3.5" />
-                          </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-muted-foreground hover:text-destructive size-7"
+                              disabled={borrando}
+                              aria-label="Eliminar nota"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </ConfirmarBorrado>
                         )}
                       </div>
                     </div>

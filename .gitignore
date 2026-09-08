@@ -43,3 +43,6 @@ next-env.d.ts
 # secretos locales
 .supabase-db-password.txt
 .env*.local
+
+# Skill de UI/UX aportada por DelegIA: es herramienta suya, no se publica.
+.claude/skills/

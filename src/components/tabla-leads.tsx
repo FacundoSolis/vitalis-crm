@@ -2,10 +2,9 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import {
   Camera,
-  ChevronRight,
   Copy,
   Globe,
   MoreHorizontal,
@@ -14,9 +13,9 @@ import {
   Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { Perfil } from '@/lib/supabase/servidor'
 import { cambiarEstado, eliminarLead } from '@/app/acciones/leads'
 import { Button } from '@/components/ui/button'
+import { ConfirmarBorrado } from '@/components/confirmar-borrado'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,19 +42,16 @@ const ICONO_FUENTE = { instagram: Camera, web: Globe, llamada: Phone }
 export function TablaLeads({
   leads,
   duplicados,
-  perfil,
 }: {
   leads: Lead[]
   duplicados: string[]
-  perfil: Perfil
 }) {
   const router = useRouter()
   const [pendiente, empezar] = useTransition()
+  const [aBorrar, setABorrar] = useState<Lead | null>(null)
   const repetidos = new Set(duplicados)
 
   function borrar(lead: Lead) {
-    if (!confirm(`¿Eliminar el lead de ${lead.nombre}? Se borrarán también sus notas.`))
-      return
     empezar(async () => {
       const r = await eliminarLead(lead.id)
       if (r.ok) {
@@ -94,6 +90,17 @@ export function TablaLeads({
         pendiente ? 'opacity-60' : ''
       }`}
     >
+      {/* Un solo diálogo para toda la tabla: el menú de la fila lo abre cerrándose
+          él, así que no puede colgar de su propio disparador. */}
+      <ConfirmarBorrado
+        abierto={aBorrar !== null}
+        onAbiertoChange={(v) => !v && setABorrar(null)}
+        titulo={aBorrar ? `¿Eliminar el lead de ${aBorrar.nombre}?` : ''}
+        descripcion="Se borrarán también todas sus notas y su historial. No se puede deshacer."
+        accion="Eliminar lead"
+        onConfirmar={() => aBorrar && borrar(aBorrar)}
+      />
+
       {leads.map((lead) => {
         const IconoFuente = ICONO_FUENTE[lead.fuente]
         const esRepetido = repetidos.has(lead.telefono_normalizado)
@@ -196,7 +203,10 @@ export function TablaLeads({
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onSelect={() => borrar(lead)}>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={() => setABorrar(lead)}
+                >
                   <Trash2 /> Eliminar lead
                 </DropdownMenuItem>
               </DropdownMenuContent>

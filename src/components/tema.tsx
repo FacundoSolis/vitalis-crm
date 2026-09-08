@@ -2,7 +2,7 @@
 
 import { ThemeProvider, useTheme } from 'next-themes'
 import { Monitor, Moon, Sun } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -30,14 +30,23 @@ const OPCIONES = [
   { valor: 'system', etiqueta: 'Automático', icono: Monitor },
 ] as const
 
+// El tema real solo se conoce en cliente. Se lee como "estado externo": en el
+// servidor y durante la hidratación vale false, y React vuelve a pintar solo
+// cuando ya está hidratado. Así se evita el setState dentro de un efecto.
+const SIN_SUSCRIPCION = () => () => {}
+const useHidratado = () =>
+  useSyncExternalStore(
+    SIN_SUSCRIPCION,
+    () => true,
+    () => false,
+  )
+
 export function SelectorTema() {
   const { theme, setTheme } = useTheme()
-  const [montado, setMontado] = useState(false)
+  const hidratado = useHidratado()
 
-  // El tema real solo se conoce en cliente; hasta entonces se reserva el hueco
-  // para que la cabecera no dé un salto al hidratar.
-  useEffect(() => setMontado(true), [])
-  if (!montado) return <div className="size-9" aria-hidden />
+  // Hasta hidratar se reserva el hueco para que la cabecera no dé un salto.
+  if (!hidratado) return <div className="size-9" aria-hidden />
 
   return (
     <DropdownMenu>

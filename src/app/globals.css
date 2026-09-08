@@ -64,8 +64,11 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.185 0.012 275);
 
-  /* Índigo del logo de DelegIA (#6569F7). Único color de acción de la app. */
-  --primary: oklch(0.585 0.213 273);
+  /* Índigo del logo de DelegIA (#6569F7). Único color de acción de la app.
+     Bajado de L 0.585 a 0.565: al valor exacto de marca, el texto blanco encima
+     daba 4.34:1 y AA pide 4.5. Con 0.565 sube a 4.72:1 y el color sigue siendo
+     el mismo índigo a ojo. En oscuro no hace falta: allí ya va a 6.19:1. */
+  --primary: oklch(0.565 0.213 273);
   --primary-foreground: oklch(0.99 0.005 275);
 
   --secondary: oklch(0.965 0.006 275);
@@ -77,18 +80,18 @@
   --destructive: oklch(0.577 0.222 25);
   --border: oklch(0.912 0.008 275);
   --input: oklch(0.912 0.008 275);
-  --ring: oklch(0.585 0.213 273);
+  --ring: oklch(0.565 0.213 273);
 
   --radius: 0.5rem;
 
   --sidebar: oklch(0.975 0.005 275);
   --sidebar-foreground: oklch(0.185 0.012 275);
-  --sidebar-primary: oklch(0.585 0.213 273);
+  --sidebar-primary: oklch(0.565 0.213 273);
   --sidebar-primary-foreground: oklch(0.99 0.005 275);
   --sidebar-accent: oklch(0.955 0.012 275);
   --sidebar-accent-foreground: oklch(0.3 0.03 273);
   --sidebar-border: oklch(0.912 0.008 275);
-  --sidebar-ring: oklch(0.585 0.213 273);
+  --sidebar-ring: oklch(0.565 0.213 273);
 
   /* Superficie oscura de marca: el panel del login, donde el logo blanco vive. */
   --marca: oklch(0.235 0.045 275);
