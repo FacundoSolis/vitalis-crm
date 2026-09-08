@@ -26,11 +26,7 @@ export function Cabecera({ perfil }: { perfil: Perfil }) {
   return (
     <header className="bg-background/85 sticky top-0 z-30 border-b backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
-        <Link
-          href="/"
-          className="rounded-md focus-visible:outline-none"
-          aria-label="Ir al listado de leads"
-        >
+        <Link href="/" className="rounded-md" aria-label="Ir al listado de leads">
           <MarcaVitalis tamano="sm" />
         </Link>
 

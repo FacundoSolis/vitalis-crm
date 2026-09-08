@@ -107,6 +107,12 @@ export default async function PaginaLeads({ searchParams }: PageProps<'/'>) {
 
       <FiltrosLeads perfil={perfil} />
 
+      {/* Al filtrar, la lista cambia sin que nada lo diga en voz alta. */}
+      <p role="status" className="sr-only">
+        {leads.length === 1 ? '1 lead' : `${leads.length} leads`} con los filtros
+        actuales.
+      </p>
+
       {duplicados.size > 0 && (
         <div className="mt-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />

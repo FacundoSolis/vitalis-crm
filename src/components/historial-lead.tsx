@@ -138,9 +138,12 @@ export function HistorialLead({ lead, notas }: { lead: Lead; notas: Nota[] }) {
 
       {/* ── Nueva nota ────────────────────────────────────────────────────── */}
       <div className="border-border bg-card rounded-xl border p-5">
-        <p className="mb-3 text-sm font-medium">Apuntar un contacto</p>
+        <label htmlFor="texto" className="mb-3 block text-sm font-medium">
+          Apuntar un contacto
+        </label>
         <form ref={formulario} action={anotar} className="space-y-3">
           <Textarea
+            id="texto"
             name="texto"
             rows={3}
             required

@@ -104,7 +104,7 @@ export function TablaLeads({
         return (
           <div
             key={lead.id}
-            className="hover:bg-accent/40 group relative grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-4 py-3.5 transition-colors sm:px-5 md:grid-cols-[minmax(0,1fr)_170px_128px_84px_auto]"
+            className="hover:bg-accent/40 has-[a:focus-visible]:outline-ring group relative grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-4 py-3.5 transition-colors has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 sm:px-5 md:grid-cols-[minmax(0,1fr)_170px_128px_84px_auto]"
           >
             {enFrio && (
               <span
@@ -115,6 +115,9 @@ export function TablaLeads({
             )}
 
             <div className="min-w-0">
+              {/* El enlace ocupa toda la fila con el span de abajo, así que su
+                  propio contorno de foco quedaría a media fila: lo dibuja el
+                  contenedor con has-[a:focus-visible]. */}
               <Link
                 href={`/leads/${lead.id}`}
                 className="block focus-visible:outline-none"
@@ -123,6 +126,7 @@ export function TablaLeads({
                 <span className="block truncate text-[15px] font-medium group-hover:underline">
                   {lead.nombre}
                 </span>
+                {enFrio && <span className="sr-only">Alto valor sin contactar</span>}
                 <span className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                   <span className="flex items-center gap-1.5">
                     <IconoFuente className="size-3 shrink-0" />

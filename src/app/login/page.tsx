@@ -39,9 +39,9 @@ export default function PaginaLogin() {
         <MarcaVitalis tamano="lg" invertida />
 
         <div className="relative max-w-md">
-          <h1 className="text-3xl leading-tight font-semibold tracking-tight text-balance">
+          <p className="text-3xl leading-tight font-semibold tracking-tight text-balance">
             El seguimiento de pacientes, ordenado.
-          </h1>
+          </p>
           <p className="mt-3 text-[15px] leading-relaxed text-white/60">
             Tres clínicas, un solo panel. Lo que antes se perdía en una hoja de cálculo
             compartida por email.
@@ -77,7 +77,7 @@ export default function PaginaLogin() {
             <MarcaVitalis tamano="md" />
           </div>
 
-          <h2 className="text-xl font-semibold tracking-tight">Entrar al panel</h2>
+          <h1 className="text-xl font-semibold tracking-tight">Entrar al panel</h1>
           <p className="text-muted-foreground mt-1.5 text-sm">
             Acceso restringido al equipo de Vitalis.
           </p>
