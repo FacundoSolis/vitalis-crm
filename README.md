@@ -59,6 +59,14 @@ cambiarla queda en el historial como cualquier otro cambio. Es **opcional a prop
 desde el listado se mueve un lead a «cita agendada» de un clic mientras se está al
 teléfono, y la fecha se completa después en la ficha, que es donde la pide el formulario.
 
+**¿Dónde se filtra, en el servidor o en el navegador? En el navegador.** Cada clic en un
+filtro costaba un renderizado entero en el servidor —casi un segundo medido en producción—
+para devolver un subconjunto de los leads que el navegador ya tenía delante. Ahora es
+inmediato, y la URL se sigue actualizando con `history.replaceState`, así que un listado
+filtrado se puede compartir por su enlace igual que antes. La condición es que **el listado
+no pagine**: los leads de una clínica caben de sobra en una carga. El día que haya que
+paginar, el filtro tiene que volver al servidor; está anotado en el propio componente.
+
 **Sobre la marca:** el panel es de Vitalis, que es de quien es la herramienta; DelegIA
 aparece como quien la construye. La identidad visual sí sale de su logo: el índigo
 `#6569F7` es el color de acción de toda la aplicación.
@@ -101,4 +109,5 @@ duplicado, nota, IA, editar, borrar con confirmación y traspaso entre clínicas
 4. **Tests de verdad.** Lo que hay son scripts, no una suite en CI.
 
 Y de lo ya construido revisaría dos cosas: el borrado es real y debería ser lógico (una
-papelera de 30 días evitaría el susto), y el listado no pagina.
+papelera de 30 días evitaría el susto), y el listado no pagina —que es justo el
+supuesto del que depende el filtrado en el navegador—.
