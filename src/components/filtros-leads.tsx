@@ -1,7 +1,7 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, useTransition } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useState } from 'react'
 import { Search, X } from 'lucide-react'
 import type { Perfil } from '@/lib/supabase/servidor'
 import { Button } from '@/components/ui/button'
@@ -18,29 +18,29 @@ import { CLINICAS, ESTADOS, ETIQUETA_ESTADO } from '@/lib/dominio'
 const TODOS = 'todos'
 
 export function FiltrosLeads({ perfil }: { perfil: Perfil }) {
-  const router = useRouter()
   const parametros = useSearchParams()
-  const [, empezar] = useTransition()
 
   const clinica = parametros.get('clinica') ?? TODOS
   const estado = parametros.get('estado') ?? TODOS
   const [texto, setTexto] = useState(parametros.get('q') ?? '')
 
+  /**
+   * Escribe el filtro en la URL sin navegar. `replaceState` se sincroniza con
+   * `useSearchParams`, así que el listado se recalcula en el mismo fotograma;
+   * `router.replace` disparaba un renderizado en el servidor por cada clic.
+   */
   function aplicar(clave: string, valor: string) {
     const nuevos = new URLSearchParams(parametros)
     if (!valor || valor === TODOS) nuevos.delete(clave)
     else nuevos.set(clave, valor)
-    empezar(() => router.replace(`/?${nuevos}`, { scroll: false }))
+    const cadena = nuevos.toString()
+    window.history.replaceState(null, '', cadena ? `/?${cadena}` : '/')
   }
 
-  // La búsqueda por texto se aplica sola tras una pausa al teclear.
-  useEffect(() => {
-    const actual = parametros.get('q') ?? ''
-    if (texto === actual) return
-    const t = setTimeout(() => aplicar('q', texto), 300)
-    return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [texto])
+  function escribir(valor: string) {
+    setTexto(valor)
+    aplicar('q', valor)
+  }
 
   const hayFiltros = clinica !== TODOS || estado !== TODOS || texto !== ''
 
@@ -50,7 +50,7 @@ export function FiltrosLeads({ perfil }: { perfil: Perfil }) {
         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
         <Input
           value={texto}
-          onChange={(e) => setTexto(e.target.value)}
+          onChange={(e) => escribir(e.target.value)}
           placeholder="Buscar por nombre o teléfono…"
           className="pl-9"
           aria-label="Buscar leads"
@@ -94,7 +94,7 @@ export function FiltrosLeads({ perfil }: { perfil: Perfil }) {
           size="sm"
           onClick={() => {
             setTexto('')
-            empezar(() => router.replace('/', { scroll: false }))
+            window.history.replaceState(null, '', '/')
           }}
         >
           <X /> Limpiar
