@@ -31,6 +31,38 @@ const USUARIOS = [
 const hace = (dias, horas = 0) =>
   new Date(Date.now() - dias * 864e5 - horas * 36e5).toISOString()
 
+// Las citas de ejemplo se sitúan en días concretos a horas de clínica. Ojo: la
+// hora local de quien lanza el seed NO sirve, aunque esté en España —Canarias va
+// una hora por detrás de Madrid, y desde fuera el desfase es cualquiera—. Se
+// construye siempre en la zona de la clínica, igual que `citaDesdeInput`.
+const ZONA_CLINICA = 'Europe/Madrid'
+
+const enZonaClinica = (t) =>
+  new Intl.DateTimeFormat('sv-SE', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: ZONA_CLINICA,
+  })
+    .format(new Date(t))
+    .replace(' ', 'T')
+
+/** Cuánto se adelanta la hora de la clínica sobre UTC en ese instante. */
+const desfaseClinica = (t) => Date.parse(`${enZonaClinica(t)}:00Z`) - t
+
+const dentroDe = (dias, hora, minuto = 0) => {
+  const dia = enZonaClinica(Date.now() + dias * 864e5).slice(0, 10)
+  const hh = String(hora).padStart(2, '0')
+  const mm = String(minuto).padStart(2, '0')
+  const enPared = Date.parse(`${dia}T${hh}:${mm}:00Z`)
+  // Segunda pasada por los dos fines de semana al año en que cambia el desfase.
+  const aproximado = enPared - desfaseClinica(enPared)
+  return new Date(enPared - desfaseClinica(aproximado)).toISOString()
+}
+
 const LEADS = [
   {
     nombre: 'Ana Belén Cortés',
@@ -51,12 +83,13 @@ const LEADS = [
     tratamiento: 'implantes',
     fuente: 'llamada',
     estado: 'cita_agendada',
+    cita: dentroDe(2, 18, 30),
     dias: 3,
     notas: [
       {
         tipo: 'llamada',
         texto:
-          'Llama preguntando por implante unitario en molar inferior. Le paso presupuesto orientativo y agenda primera visita el jueves 18:30.',
+          'Llama preguntando por implante unitario en molar inferior. Le paso presupuesto orientativo y le agendo primera visita.',
       },
     ],
   },
@@ -158,11 +191,12 @@ const LEADS = [
     tratamiento: 'estetica',
     fuente: 'instagram',
     estado: 'cita_agendada',
+    cita: dentroDe(5, 10, 0),
     dias: 2,
     notas: [
       {
         tipo: 'mensaje',
-        texto: 'Quiere carillas antes de una boda en junio. Cita el martes 17:00.',
+        texto: 'Quiere carillas antes de una boda en junio. Le doy cita para verla.',
       },
     ],
   },
@@ -246,11 +280,12 @@ const LEADS = [
     tratamiento: 'ortodoncia',
     fuente: 'llamada',
     estado: 'cita_agendada',
+    cita: dentroDe(1, 16, 0),
     dias: 1,
     notas: [
       {
         tipo: 'llamada',
-        texto: 'Ortodoncia para su hija de 14 años. Cita el viernes a las 16:00.',
+        texto: 'Ortodoncia para su hija de 14 años. Le doy cita por la tarde.',
       },
     ],
   },
@@ -341,6 +376,7 @@ async function main() {
         tratamiento: l.tratamiento,
         fuente: l.fuente,
         estado: l.estado,
+        fecha_cita: l.cita ?? null,
         creado_en: hace(l.dias, 3),
         actualizado_en: hace(l.dias, 1),
         creado_por: autorDe(l.clinica),

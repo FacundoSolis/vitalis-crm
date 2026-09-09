@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import {
+  CalendarClock,
   Camera,
   Copy,
   Globe,
@@ -32,6 +33,7 @@ import {
   ETIQUETA_FUENTE,
   ETIQUETA_TRATAMIENTO,
   PUNTO_ESTADO,
+  formatearCita,
   haceCuanto,
   type Estado,
   type Lead,
@@ -67,6 +69,11 @@ export function TablaLeads({
       if (r.ok) {
         toast.success(
           `${lead.nombre.split(' ')[0]} pasa a ${ETIQUETA_ESTADO[estado].toLowerCase()}`,
+          // Mover a «cita agendada» desde aquí es un clic mientras se está al
+          // teléfono; la hora se pone luego, pero conviene no olvidarla.
+          estado === 'cita_agendada' && !lead.fecha_cita
+            ? { description: 'Abre la ficha para ponerle día y hora.' }
+            : undefined,
         )
         router.refresh()
       } else toast.error(r.error)
@@ -143,6 +150,12 @@ export function TablaLeads({
                   <span className="md:hidden">
                     {ETIQUETA_TRATAMIENTO[lead.tratamiento]} · {lead.clinica}
                   </span>
+                  {lead.fecha_cita && (
+                    <span className="flex items-center gap-1 text-violet-600 dark:text-violet-400">
+                      <CalendarClock className="size-3 shrink-0" />
+                      {formatearCita(lead.fecha_cita)}
+                    </span>
+                  )}
                   {esRepetido && (
                     <span
                       className="flex items-center gap-1 text-amber-600 dark:text-amber-400"
@@ -203,10 +216,7 @@ export function TablaLeads({
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onSelect={() => setABorrar(lead)}
-                >
+                <DropdownMenuItem variant="destructive" onSelect={() => setABorrar(lead)}>
                   <Trash2 /> Eliminar lead
                 </DropdownMenuItem>
               </DropdownMenuContent>

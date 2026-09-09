@@ -14,6 +14,7 @@ import {
   ETIQUETA_ESTADO,
   ETIQUETA_FUENTE,
   ETIQUETA_TRATAMIENTO,
+  formatearCita,
   formatearFecha,
   haceCuanto,
   type Lead,
@@ -48,6 +49,18 @@ export default async function PaginaLead({ params }: PageProps<'/leads/[id]'>) {
   ])
 
   const datos = [
+    // Solo cuando hay algo que decir de la cita: en un lead nuevo, un campo
+    // «Cita: —» fijo no informa, ocupa.
+    ...(lead.fecha_cita || lead.estado === 'cita_agendada'
+      ? [
+          {
+            etiqueta: 'Cita',
+            valor: lead.fecha_cita
+              ? formatearCita(lead.fecha_cita)
+              : 'Sin fecha — ponla al editar',
+          },
+        ]
+      : []),
     { etiqueta: 'Clínica de interés', valor: lead.clinica },
     { etiqueta: 'Tratamiento', valor: ETIQUETA_TRATAMIENTO[lead.tratamiento] },
     { etiqueta: 'Cómo nos llegó', valor: ETIQUETA_FUENTE[lead.fuente] },

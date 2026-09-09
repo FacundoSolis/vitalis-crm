@@ -39,8 +39,11 @@ import {
   ETIQUETA_TRATAMIENTO,
   FUENTES,
   TRATAMIENTOS,
+  citaDesdeInput,
   formatearFecha,
   normalizarTelefono,
+  paraInputCita,
+  type Estado,
   type Lead,
 } from '@/lib/dominio'
 
@@ -58,6 +61,10 @@ export function DialogoLead({
   const [guardando, empezar] = useTransition()
   const [trayendo, empezarTraspaso] = useTransition()
   const editando = Boolean(lead)
+
+  // El estado se controla porque la fecha de la cita depende de él: agendar una
+  // cita sin decir cuándo es la mitad de un dato.
+  const [estado, setEstado] = useState<Estado>(lead?.estado ?? 'nuevo')
 
   // Recepción solo puede dar de alta en su propia clínica.
   const clinicasDisponibles = perfil.rol === 'admin' ? CLINICAS : [perfil.clinica!]
@@ -99,9 +106,16 @@ export function DialogoLead({
     setAbierto(false)
     setEnOtraClinica(null)
     setTelefonoBuscado('')
+    setEstado(lead?.estado ?? 'nuevo')
   }
 
   function guardar(datos: FormData) {
+    // El navegador manda «2026-09-12T17:00», sin zona. Se ancla aquí a la hora de
+    // la clínica; si llegara en crudo, el servidor (en UTC) la leería dos horas
+    // antes y el paciente recibiría la hora equivocada.
+    const cita = datos.get('fecha_cita')
+    datos.set('fecha_cita', typeof cita === 'string' ? (citaDesdeInput(cita) ?? '') : '')
+
     empezar(async () => {
       const r = editando ? await actualizarLead(lead!.id, datos) : await crearLead(datos)
       if (!r.ok) {
@@ -230,7 +244,11 @@ export function DialogoLead({
 
             <div className="space-y-2">
               <Label htmlFor="estado">Estado</Label>
-              <Select name="estado" defaultValue={lead?.estado ?? 'nuevo'}>
+              <Select
+                name="estado"
+                value={estado}
+                onValueChange={(v) => setEstado(v as Estado)}
+              >
                 <SelectTrigger id="estado" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -243,6 +261,30 @@ export function DialogoLead({
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="fecha_cita">
+                Día y hora de la cita{' '}
+                {estado !== 'cita_agendada' && (
+                  <span className="text-muted-foreground font-normal">(opcional)</span>
+                )}
+              </Label>
+              <Input
+                id="fecha_cita"
+                name="fecha_cita"
+                type="datetime-local"
+                required={estado === 'cita_agendada'}
+                defaultValue={lead?.fecha_cita ? paraInputCita(lead.fecha_cita) : ''}
+                // Poner fecha es agendar: se mueve el estado solo, pero a la vista
+                // en el desplegable de arriba, para que se pueda corregir.
+                onChange={(e) => e.target.value && setEstado('cita_agendada')}
+                className="w-full"
+              />
+              <p className="text-muted-foreground text-xs">
+                Hora de la clínica. El mensaje de seguimiento la usa para recordarle la
+                cita en vez de hablar de ella en abstracto.
+              </p>
+            </div>
           </div>
 
           {enOtraClinica && (
@@ -252,12 +294,14 @@ export function DialogoLead({
             >
               <AlertTriangle className="mt-0.5 size-4 shrink-0" />
               <div className="min-w-0 flex-1">
-                <p className="font-medium">Este paciente ya está en {enOtraClinica.clinica}</p>
+                <p className="font-medium">
+                  Este paciente ya está en {enOtraClinica.clinica}
+                </p>
                 <p className="mt-0.5">
-                  {enOtraClinica.nombre} · {ETIQUETA_ESTADO[enOtraClinica.estado]} ·
-                  desde el {formatearFecha(enOtraClinica.creado_en)}. Si viene a
-                  atenderse aquí, tráete su ficha en vez de crear una nueva: se conserva
-                  todo lo que se habló con él.
+                  {enOtraClinica.nombre} · {ETIQUETA_ESTADO[enOtraClinica.estado]} · desde
+                  el {formatearFecha(enOtraClinica.creado_en)}. Si viene a atenderse aquí,
+                  tráete su ficha en vez de crear una nueva: se conserva todo lo que se
+                  habló con él.
                 </p>
                 <Button
                   type="button"

@@ -27,6 +27,7 @@ export type Lead = {
   tratamiento: Tratamiento
   fuente: Fuente
   estado: Estado
+  fecha_cita: string | null
   creado_en: string
   actualizado_en: string
   telefono_normalizado: string
@@ -120,6 +121,72 @@ export function formatearFecha(iso: string) {
     month: 'short',
     year: 'numeric',
   }).format(new Date(iso))
+}
+
+/**
+ * Las tres sedes están en España, así que una cita a las 17:00 son las 17:00 de
+ * la clínica: se escriba desde donde se escriba y se lea desde donde se lea
+ * —incluido el servidor, que corre en UTC—. Todo lo que toca `fecha_cita` pasa
+ * por esta zona para que la hora que ve el paciente y la que ve el equipo sean
+ * la misma.
+ */
+const ZONA_CLINICA = 'Europe/Madrid'
+
+/** «vie, 12 sept, 17:00» — para la tabla y la ficha. */
+export function formatearCita(iso: string) {
+  return new Intl.DateTimeFormat('es-ES', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: ZONA_CLINICA,
+  }).format(new Date(iso))
+}
+
+/** «viernes, 12 de septiembre, 17:00» — para el mensaje de WhatsApp. */
+export function formatearCitaLarga(iso: string) {
+  return new Intl.DateTimeFormat('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: ZONA_CLINICA,
+  }).format(new Date(iso))
+}
+
+/** El valor que espera un `<input type="datetime-local">`: `2026-09-12T17:00`. */
+export function paraInputCita(iso: string) {
+  // sv-SE ya da «2026-09-12 17:00»; solo hay que cambiar el espacio por la T.
+  return new Intl.DateTimeFormat('sv-SE', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: ZONA_CLINICA,
+  })
+    .format(new Date(iso))
+    .replace(' ', 'T')
+}
+
+/** Cuánto se adelanta la hora de la clínica sobre UTC en ese instante. */
+function desfaseClinica(t: number) {
+  return Date.parse(`${paraInputCita(new Date(t).toISOString())}:00Z`) - t
+}
+
+/**
+ * El camino de vuelta: lo que escribió el formulario es hora de la clínica, no
+ * hora del navegador. La segunda pasada es por los dos fines de semana al año en
+ * que el desfase cambia y la primera estimación se queda a una hora.
+ */
+export function citaDesdeInput(valor: string) {
+  const enPared = Date.parse(`${valor}:00Z`)
+  if (Number.isNaN(enPared)) return null
+  const aproximado = enPared - desfaseClinica(enPared)
+  return new Date(enPared - desfaseClinica(aproximado)).toISOString()
 }
 
 export function formatearFechaHora(iso: string) {

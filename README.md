@@ -44,10 +44,20 @@ acertar su teléfono.
 
 **¿Qué tono usa la IA? Cercano y profesional, de tú, español de España.** Entre 30 y 60
 palabras, porque es un WhatsApp, y una sola llamada a la acción. Tres límites que el prompt
-no cruza: no da precios, no hace diagnósticos ni promete resultados, y no se inventa citas
-ni promociones. El mensaje cambia según el estado del lead, y **nunca se envía solo**: se
+no cruza: no da precios, no hace diagnósticos ni promete resultados, y no se inventa
+promociones ni fechas —la única que puede escribir es la cita que ve en la ficha—. El mensaje cambia según el estado del lead, y **nunca se envía solo**: se
 guarda como nota marcada para que una persona lo revise. Un CRM que manda WhatsApps a
 pacientes sin supervisión es un problema, no una función.
+
+**¿Dónde vive la fecha de la cita? En su propio campo, no dentro de una nota.** El estado
+«cita agendada» decía que había cita pero no cuándo, así que la hora acababa escrita a mano
+en el texto de una nota: ahí no se puede ordenar, ni avisar, ni leerla desde el generador
+de mensajes —que además tiene prohibido inventarse fechas y por eso redactaba recordatorios
+sin decir la cita—. Ahora es una columna, se guarda siempre en hora de la clínica (todas
+están en España, así que la hora que ve el paciente y la que ve el equipo son la misma), y
+cambiarla queda en el historial como cualquier otro cambio. Es **opcional a propósito**:
+desde el listado se mueve un lead a «cita agendada» de un clic mientras se está al
+teléfono, y la fecha se completa después en la ficha, que es donde la pide el formulario.
 
 **Sobre la marca:** el panel es de Vitalis, que es de quien es la herramienta; DelegIA
 aparece como quien la construye. La identidad visual sí sale de su logo: el índigo

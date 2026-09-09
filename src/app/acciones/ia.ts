@@ -7,6 +7,7 @@ import {
   ETIQUETA_ESTADO,
   ETIQUETA_FUENTE,
   ETIQUETA_TRATAMIENTO,
+  formatearCitaLarga,
   haceCuanto,
   type Lead,
   type Nota,
@@ -36,17 +37,28 @@ Cómo escribes:
 Límites que no cruzas nunca:
 - No das precios, ni presupuestos, ni rangos de precio.
 - No haces diagnósticos ni prometes resultados clínicos.
-- No te inventas citas, fechas, promociones ni datos que no aparezcan en la ficha.
+- No te inventas promociones ni datos que no aparezcan en la ficha.
+- La única fecha que puedes escribir es la cita que viene en la ficha, tal cual. Si la ficha dice que no hay cita, no mencionas ninguna fecha ni das por hecho que exista.
 - No usas asteriscos, markdown ni encabezados. Es texto plano de WhatsApp.
 
 Cómo adaptas el mensaje al estado del lead:
 - nuevo: primer contacto. Agradeces su interés y ofreces resolver dudas o agendar una primera visita.
 - contactado: ya hablamos con él y no ha respondido. Retomas con naturalidad, sin reprochar el silencio.
-- cita_agendada: recuerdas la cita, confirmas asistencia y ofreces cambiarla si le viene mal.
+- cita_agendada: recuerdas la cita diciendo el día y la hora que aparecen en la ficha, confirmas que le sigue viniendo bien y ofreces cambiarla si no. Si la ficha no tiene fecha, pides que te confirme el día que habíais hablado en vez de inventarte uno.
 - no_interesado: mensaje breve, sin presión, dejando la puerta abierta para el futuro.
 - cliente: seguimiento post-tratamiento. Interesarte por cómo va y recordar la revisión.
 
 Respondes ÚNICAMENTE con el texto del mensaje. Sin comillas, sin preámbulos, sin explicaciones.`
+
+/** «es dentro de 3 días», «fue ayer»: el modelo necesita saber si la cita ya pasó. */
+function cuandoEsLaCita(iso: string) {
+  const dias = Math.round((new Date(iso).getTime() - Date.now()) / 864e5)
+  if (dias === 0) return 'es hoy'
+  if (dias === 1) return 'es mañana'
+  if (dias > 1) return `es dentro de ${dias} días`
+  if (dias === -1) return 'fue ayer'
+  return `fue hace ${Math.abs(dias)} días`
+}
 
 function fichaDelLead(lead: Lead, notas: Nota[]) {
   const historial = notas.length
@@ -56,10 +68,18 @@ function fichaDelLead(lead: Lead, notas: Nota[]) {
         .join('\n')
     : '- Todavía no hay ningún contacto registrado.'
 
+  // Sin esta línea el modelo tenía que recordar una cita cuya fecha no le
+  // habíamos dado, y el prompt le prohíbe inventársela: salían recordatorios sin
+  // día ni hora, justo lo que hay que decir en un recordatorio.
+  const cita = lead.fecha_cita
+    ? `${formatearCitaLarga(lead.fecha_cita)} (${cuandoEsLaCita(lead.fecha_cita)})`
+    : 'no hay ninguna cita puesta en la ficha'
+
   return `Nombre: ${lead.nombre}
 Sede de interés: ${lead.clinica}
 Tratamiento: ${ETIQUETA_TRATAMIENTO[lead.tratamiento]}
 Estado actual: ${lead.estado} (${ETIQUETA_ESTADO[lead.estado]})
+Cita: ${cita}
 Cómo nos llegó: ${ETIQUETA_FUENTE[lead.fuente]}
 Entró en la base de datos: ${haceCuanto(lead.creado_en)}
 

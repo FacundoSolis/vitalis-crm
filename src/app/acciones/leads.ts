@@ -17,21 +17,28 @@ import {
 
 export type Resultado = { ok: true } | { ok: false; error: string }
 
-const esquemaLead = z.object({
-  nombre: z.string().trim().min(2, 'El nombre es obligatorio.'),
-  telefono: z
-    .string()
-    .trim()
-    .refine(
-      (t) => normalizarTelefono(t).length >= 9,
-      'El teléfono debe tener al menos 9 dígitos.',
-    ),
-  email: z.string().trim().email('El email no es válido.').or(z.literal('')).nullable(),
-  clinica: z.enum(CLINICAS),
-  tratamiento: z.enum(TRATAMIENTOS),
-  fuente: z.enum(FUENTES),
-  estado: z.enum(ESTADOS),
-})
+const esquemaLead = z
+  .object({
+    nombre: z.string().trim().min(2, 'El nombre es obligatorio.'),
+    telefono: z
+      .string()
+      .trim()
+      .refine(
+        (t) => normalizarTelefono(t).length >= 9,
+        'El teléfono debe tener al menos 9 dígitos.',
+      ),
+    email: z.string().trim().email('El email no es válido.').or(z.literal('')).nullable(),
+    clinica: z.enum(CLINICAS),
+    tratamiento: z.enum(TRATAMIENTOS),
+    fuente: z.enum(FUENTES),
+    estado: z.enum(ESTADOS),
+    // Llega ya en ISO: el formulario la convierte desde la hora de la clínica.
+    fecha_cita: z.iso.datetime().nullable(),
+  })
+  .refine((l) => l.estado !== 'cita_agendada' || l.fecha_cita !== null, {
+    path: ['fecha_cita'],
+    message: 'Si la cita está agendada, di cuándo es.',
+  })
 
 function leerFormulario(datos: FormData) {
   return esquemaLead.safeParse({
@@ -42,6 +49,7 @@ function leerFormulario(datos: FormData) {
     tratamiento: datos.get('tratamiento'),
     fuente: datos.get('fuente'),
     estado: datos.get('estado') ?? 'nuevo',
+    fecha_cita: datos.get('fecha_cita') || null,
   })
 }
 
