@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Skill de UI/UX aportada por DelegIA: es herramienta suya, no se publica.
 .claude/skills/
+
+# PDF de trabajo, no forma parte de la entrega
+seo.pdf
