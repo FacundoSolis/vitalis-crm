@@ -88,11 +88,95 @@ console.log('\nGerencia (gerencia@vitalis.es)')
   )
 }
 
+// Un paciente pide cita en Valencia y luego se atiende en Madrid. Madrid no lo ve
+// en su listado, pero sí puede preguntar por su teléfono y traerse la ficha.
+console.log('\nPaciente que cambia de clínica')
+{
+  const TEL = '+34 600 987 654'
+  const NORMALIZADO = '600987654'
+
+  const gerencia = await como('gerencia@vitalis.es')
+  const { data: enValencia } = await gerencia
+    .from('leads')
+    .insert({
+      nombre: 'Paciente Traspaso',
+      telefono: TEL,
+      clinica: 'Valencia',
+      tratamiento: 'implantes',
+      fuente: 'web',
+    })
+    .select('id')
+    .single()
+
+  const madrid = await como('madrid@vitalis.es')
+
+  const { data: invisible } = await madrid
+    .from('leads')
+    .select('id')
+    .eq('telefono_normalizado', NORMALIZADO)
+  exigir(invisible?.length === 0, 'Madrid no ve en su listado el lead de Valencia')
+
+  const { data: encontrado, error: errorBusqueda } = await madrid.rpc(
+    'buscar_paciente_en_otras_clinicas',
+    { telefono_buscado: TEL },
+  )
+  exigir(
+    !errorBusqueda && encontrado?.length === 1 && encontrado[0].clinica === 'Valencia',
+    'buscando por su teléfono sí lo encuentra, y le dice que es de Valencia',
+  )
+  exigir(
+    encontrado?.[0] && !('telefono' in encontrado[0]) && !('email' in encontrado[0]),
+    'la búsqueda devuelve lo mínimo: ni email ni tratamiento ni notas',
+  )
+
+  const { error: errorTelMal } = await madrid.rpc('reclamar_lead', {
+    lead_id: enValencia.id,
+    telefono_buscado: '600000001',
+  })
+  exigir(Boolean(errorTelMal), 'no puede reclamar un lead sin acertar su teléfono')
+
+  const { error: errorReclamo } = await madrid.rpc('reclamar_lead', {
+    lead_id: enValencia.id,
+    telefono_buscado: TEL,
+  })
+  exigir(!errorReclamo, 'se trae la ficha a Madrid')
+
+  const { data: ahora } = await madrid
+    .from('leads')
+    .select('clinica')
+    .eq('id', enValencia.id)
+  exigir(ahora?.[0]?.clinica === 'Madrid', 'y a partir de ahí ya la ve en su listado')
+
+  const { data: notas } = await madrid
+    .from('notas')
+    .select('texto, tipo')
+    .eq('lead_id', enValencia.id)
+  exigir(
+    notas?.some((n) => n.tipo === 'sistema' && n.texto.includes('Valencia → Madrid')),
+    'el traspaso queda registrado en el historial',
+  )
+
+  const { data: sinPermiso } = await madrid.rpc('buscar_paciente_en_otras_clinicas', {
+    telefono_buscado: '61124589',
+  })
+  exigir(
+    !sinPermiso || sinPermiso.length === 0,
+    'con un teléfono incompleto no devuelve nada (no se puede ir pescando)',
+  )
+
+  await madrid.from('leads').delete().eq('id', enValencia.id)
+}
+
 console.log('\nSin sesión')
 {
   const c = createClient(url, anon, { auth: { persistSession: false } })
   const { data } = await c.from('leads').select('id')
   exigir(!data || data.length === 0, 'un anónimo no ve ningún lead')
+
+  const { error } = await c.rpc('buscar_paciente_en_otras_clinicas', {
+    telefono_buscado: '611245890',
+  })
+  exigir(Boolean(error), 'un anónimo tampoco puede buscar pacientes por teléfono')
 }
 
 console.log(

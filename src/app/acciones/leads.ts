@@ -11,6 +11,8 @@ import {
   TRATAMIENTOS,
   TIPOS_NOTA,
   normalizarTelefono,
+  type Clinica,
+  type Estado,
 } from '@/lib/dominio'
 
 export type Resultado = { ok: true } | { ok: false; error: string }
@@ -88,6 +90,52 @@ export async function cambiarEstado(id: string, estado: string): Promise<Resulta
     .from('leads')
     .update({ estado: validado.data })
     .eq('id', id)
+
+  if (error) return { ok: false, error: traducirError(error.message) }
+  revalidatePath('/')
+  revalidatePath(`/leads/${id}`)
+  return { ok: true }
+}
+
+// ── Paciente que ya existe en otra clínica ──────────────────────────────────
+
+export type PacienteEnOtraClinica = {
+  id: string
+  nombre: string
+  clinica: Clinica
+  estado: Estado
+  creado_en: string
+}
+
+/**
+ * Pregunta acotada: ¿este teléfono ya está dado de alta en otra clínica? Devuelve
+ * lo justo para reconocer al paciente en el mostrador, nunca su historial. Para
+ * gerencia siempre vuelve vacía, porque ya ve las tres clínicas.
+ */
+export async function buscarPacienteEnOtrasClinicas(
+  telefono: string,
+): Promise<PacienteEnOtraClinica[]> {
+  await perfilActual()
+  if (normalizarTelefono(telefono).length < 9) return []
+
+  const supabase = await clienteServidor()
+  const { data, error } = await supabase.rpc('buscar_paciente_en_otras_clinicas', {
+    telefono_buscado: telefono,
+  })
+
+  // Si la consulta falla, el alta sigue su curso: esto es una ayuda, no un filtro.
+  if (error) return []
+  return (data ?? []) as PacienteEnOtraClinica[]
+}
+
+/** Trae a la clínica propia un lead encontrado con la búsqueda anterior. */
+export async function reclamarLead(id: string, telefono: string): Promise<Resultado> {
+  await perfilActual()
+  const supabase = await clienteServidor()
+  const { error } = await supabase.rpc('reclamar_lead', {
+    lead_id: id,
+    telefono_buscado: telefono,
+  })
 
   if (error) return { ok: false, error: traducirError(error.message) }
   revalidatePath('/')

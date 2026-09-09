@@ -14,10 +14,11 @@ seguimiento para que el equipo lo revise antes de enviarlo.
 
 ## Las decisiones que tomé yo
 
-**¿Un lead puede cambiar de clínica? Sí, es editable.** Alguien pide información en Madrid
-y acaba tratándose en Valencia. Bloquearlo obligaría a duplicar el lead y perder su
-historial. Pero como cambiar de clínica cambia quién ve ese lead, no puede ser silencioso:
-un trigger de Postgres registra cada cambio de clínica y de estado como nota de sistema.
+**¿Un lead puede cambiar de clínica? Sí.** Alguien pide información en Madrid y acaba
+tratándose en Valencia. Bloquearlo obligaría a duplicar el lead y perder su historial.
+Gerencia lo cambia editando la ficha y recepción se lo trae ella misma (más abajo). Pero
+como cambiar de clínica cambia quién ve ese lead, no puede ser silencioso: un trigger de
+Postgres registra cada cambio de clínica y de estado como nota de sistema.
 
 **¿Dos leads con el mismo teléfono? Se avisa, no se fusiona ni se bloquea.** Fusionar es
 destructivo y se equivoca: en una familia se comparte teléfono. Bloquear el alta es peor,
@@ -28,6 +29,18 @@ otro lead. Decide quien tiene el contexto. Avisar es reversible; fusionar no.
 **¿Quién ve qué? Gerencia ve las tres clínicas, recepción solo la suya.** Lo importante es
 que está implementado con Row Level Security en Postgres, no escondiendo botones: aunque
 alguien llamara a la API con su sesión, la base de datos solo le devuelve sus leads.
+
+**¿Y el paciente que pide cita en Madrid y se atiende en Valencia?** Ese caso rompía lo
+anterior: Valencia no lo encuentra al buscar, el aviso de duplicado tampoco salta —se
+calcula sobre lo que esa persona ve— y acaba con dos fichas y el historial de Madrid
+huérfano. Justo lo que este CRM viene a evitar. La respuesta no es abrir el listado, sino
+abrir **una pregunta muy concreta**: recepción puede consultar un teléfono completo —el
+que el paciente le acaba de dar en el mostrador— y recibe cuatro campos para reconocerlo
+(nombre, clínica, estado y fecha), nunca su historial. Si es él, un botón se trae la ficha
+entera y el traspaso queda registrado. Sigue sin poder listar los leads de otra clínica:
+sin el teléfono delante no ve nada. Está en `buscar_paciente_en_otras_clinicas` y
+`reclamar_lead`, y `pnpm verificar` comprueba también que no se puede reclamar un lead sin
+acertar su teléfono.
 
 **¿Qué tono usa la IA? Cercano y profesional, de tú, español de España.** Entre 30 y 60
 palabras, porque es un WhatsApp, y una sola llamada a la acción. Tres límites que el prompt
@@ -60,9 +73,10 @@ pnpm dev
 
 Contraseña de los tres: `Vitalis2026!`
 
-`pnpm verificar` comprueba contra la base de datos real que recepción solo ve su clínica y
-que un anónimo no ve nada. `pnpm ensayo` recorre en producción el flujo completo con un
-navegador real: crear, duplicado, nota, IA, editar y borrar con confirmación.
+`pnpm verificar` comprueba contra la base de datos real que recepción solo ve su clínica,
+que puede traerse un paciente de otra sede sin duplicarlo y que un anónimo no ve nada.
+`pnpm ensayo` recorre en producción el flujo completo con un navegador real: crear,
+duplicado, nota, IA, editar, borrar con confirmación y traspaso entre clínicas.
 
 ---
 

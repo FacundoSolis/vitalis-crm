@@ -68,7 +68,7 @@ ${historial}`
 }
 
 /**
- * Genera el borrador de WhatsApp con Claude y lo guarda como nota del lead,
+ * Genera el borrador de WhatsApp con OpenAI y lo guarda como nota del lead,
  * marcada como `mensaje_ia` para que el equipo sepa que hay que revisarla.
  */
 export async function generarMensajeSeguimiento(leadId: string): Promise<ResultadoIA> {

@@ -120,6 +120,19 @@ await paso('borra el lead confirmando en el diálogo y vuelve al listado', async
   await pag.getByRole('heading', { name: 'Leads', level: 1 }).waitFor({ timeout: 25000 })
 })
 
+// El paciente que se cambia de sede: gerencia lo da de alta en Valencia y luego
+// Madrid se lo trae desde el formulario de alta, sin duplicarlo.
+const PACIENTE_QUE_SE_MUEVE = 'Ensayo Traspaso Valencia'
+await paso('gerencia da de alta un paciente en Valencia', async () => {
+  await pag.getByRole('button', { name: /Nuevo lead/ }).click()
+  await pag.getByLabel('Nombre y apellidos').fill(PACIENTE_QUE_SE_MUEVE)
+  await pag.getByLabel('Teléfono').fill('600 987 654')
+  await pag.getByLabel('Clínica de interés').click()
+  await pag.getByRole('option', { name: 'Valencia' }).click()
+  await pag.getByRole('button', { name: 'Crear lead' }).click()
+  await pag.getByText(PACIENTE_QUE_SE_MUEVE).waitFor({ timeout: 25000 })
+})
+
 await paso('recepción de Madrid no ve los leads de otras clínicas', async () => {
   await pag.getByRole('button', { name: 'Cerrar sesión' }).click()
   await pag.waitForURL(/\/login/, { timeout: 25000 })
@@ -131,6 +144,33 @@ await paso('recepción de Madrid no ve los leads de otras clínicas', async () =
   if (cuerpo.includes('Rafael Ortega') || cuerpo.includes('Elena Vázquez')) {
     throw new Error('ve leads de Valencia o Sevilla')
   }
+  if (cuerpo.includes(PACIENTE_QUE_SE_MUEVE)) {
+    throw new Error('ve el lead que gerencia acaba de crear en Valencia')
+  }
+})
+
+await paso('al dar de alta a ese paciente, Madrid ve que ya está en Valencia', async () => {
+  await pag.getByRole('button', { name: /Nuevo lead/ }).click()
+  await pag.getByLabel('Nombre y apellidos').fill('Paciente que se cambia de sede')
+  await pag.getByLabel('Teléfono').fill('600 987 654')
+  await pag.getByLabel('Nombre y apellidos').click() // saca el foco del teléfono
+  await pag.getByText(/ya está en Valencia/).waitFor({ timeout: 25000 })
+})
+
+await paso('se trae la ficha a Madrid con su historial, sin duplicarla', async () => {
+  await pag.getByRole('button', { name: /Traer la ficha a Madrid/ }).click()
+  await pag.waitForURL(/\/leads\//, { timeout: 25000 })
+  await pag
+    .getByRole('heading', { level: 1, name: PACIENTE_QUE_SE_MUEVE })
+    .waitFor({ timeout: 25000 })
+  await pag.getByText(/Valencia → Madrid/).waitFor({ timeout: 25000 })
+})
+
+await paso('deja la base como estaba', async () => {
+  await pag.getByRole('button', { name: 'Eliminar lead', exact: true }).click()
+  const dialogo = pag.getByRole('alertdialog')
+  await dialogo.getByRole('button', { name: 'Eliminar lead', exact: true }).click()
+  await pag.waitForURL(`${BASE}/`, { timeout: 25000 })
 })
 
 await navegador.close()
