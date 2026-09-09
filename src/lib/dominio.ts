@@ -183,6 +183,10 @@ function desfaseClinica(t: number) {
  * que el desfase cambia y la primera estimación se queda a una hora.
  */
 export function citaDesdeInput(valor: string) {
+  // Con el campo vacío esto era `Date.parse(':00Z')`, que NO es NaN: V8 lo lee
+  // como el 1 de enero de 2000 y colaba una cita fantasma en cada alta. Se
+  // exige la forma completa que manda `datetime-local` en vez de fiarse.
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(valor)) return null
   const enPared = Date.parse(`${valor}:00Z`)
   if (Number.isNaN(enPared)) return null
   const aproximado = enPared - desfaseClinica(enPared)
